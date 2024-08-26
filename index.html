@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Chess-like Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1c1c1c;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(5, 50px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background-color: #2d2d2d;
+            border: 1px solid #555;
+        }
+        .playerA {
+            color: #ff4d4d;
+            background-color: #333;
+            border: 1px solid #ff4d4d;
+        }
+        .playerB {
+            color: #4da6ff;
+            background-color: #333;
+            border: 1px solid #4da6ff;
+        }
+        #status {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        #piece-guide {
+            text-align: left;
+            margin-top: 20px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            width: 300px;
+        }
+        #piece-guide h3 {
+            margin-top: 0;
+            color: #ffcc00;
+        }
+        #piece-guide ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #piece-guide ul li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .movement-icons {
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .movement-icons .icon {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            background-color: #ffcc00;
+            margin-right: 3px;
+            text-align: center;
+            line-height: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="status">Current Player: A</div>
+        <div id="game-board">
+            <!-- Game cells will be dynamically generated here -->
+        </div>
+        <div id="piece-guide">
+            <h3>Piece Movement Guide</h3>
+            <ul>
+                <li>Pawn (P): Moves 1 step in any direction 
+                    <div class="movement-icons">
+                        <div class="icon">↑</div><div class="icon">→</div><div class="icon">↓</div><div class="icon">←</div>
+                    </div>
+                </li>
+                <li>Hero1 (H1): Moves 2 steps in any direction 
+                    <div class="movement-icons">
+                        <div class="icon">↑↑</div><div class="icon">→→</div><div class="icon">↓↓</div><div class="icon">←←</div>
+                    </div>
+                </li>
+                <li>Hero2 (H2): Moves 2 steps diagonally 
+                    <div class="movement-icons">
+                        <div class="icon">↗</div><div class="icon">↘</div><div class="icon">↙</div><div class="icon">↖</div>
+                    </div>
+                </li>
+                <li>Hero3 (H3): Moves 2 steps in one direction, then 1 step perpendicular 
+                    <div class="movement-icons">
+                        <div class="icon">↗</div><div class="icon">↘</div><div class="icon">↙</div><div class="icon">↖</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const gridSize = 5;
+        const board = document.getElementById('game-board');
+
+        const gameState = {
+            turn: 'A',
+            winner: null,
+            players: {
+                A: {
+                    characters: {}
+                },
+                B: {
+                    characters: {}
+                }
+            }
+        };
+
+        function initializeBoard() {
+            board.innerHTML = '';
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function setupPlayers() {
+            const playerASetup = ['P1', 'H1', 'H2', 'P2', 'H3'];
+            const playerBSetup = ['P1', 'H2', 'H1', 'P2', 'H3'];
+
+            playerASetup.forEach((char, index) => {
+                gameState.players.A.characters[char] = [0, index];
+            });
+
+            playerBSetup.forEach((char, index) => {
+                gameState.players.B.characters[char] = [gridSize - 1, index];
+            });
+        }
+
+        function renderGameBoard() {
+            initializeBoard();
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = board.children[i * gridSize + j];
+                    let occupied = false;
+
+                    for (const player in gameState.players) {
+                        for (const char in gameState.players[player].characters) {
+                            const [x, y] = gameState.players[player].characters[char];
+                            if (x === i && y === j) {
+                                cell.textContent = `${char}`;
+                                cell.classList.add(player === 'A' ? 'playerA' : 'playerB');
+                                occupied = true;
+                            }
+                        }
+                    }
+
+                    if (!occupied) {
+                        cell.className = 'cell'; 
+                    }
+                }
+            }
+
+            const status = document.getElementById('status');
+            if (gameState.winner) {
+                status.textContent = `Player ${gameState.winner} wins!`;
+            } else {
+                status.textContent = `Current Player: ${gameState.turn}`;
+            }
+        }
+
+        function handlePlayerMove(command) {
+            if (gameState.winner) return;
+
+            const [char, move] = command.split(':');
+            const player = gameState.turn;
+            const opponent = player === 'A' ? 'B' : 'A';
+            const characterPosition = gameState.players[player].characters[char];
+
+            if (!characterPosition) {
+                console.error("Invalid move: Character doesn't exist");
+                return;
+            }
+
+            let [x, y] = characterPosition;
+            let newX = x;
+            let newY = y;
+
+            switch (move) {
+                case 'L':
+                    newY -= 1;
+                    break;
+                case 'R':
+                    newY += 1;
+                    break;
+                case 'F':
+                    newX += player === 'A' ? 1 : -1;
+                    break;
+                case 'B':
+                    newX -= player === 'A' ? 1 : -1;
+                    break;
+                case 'FL':
+                    newX += player === 'A' ? 1 : -1;
+                    newY -= 1;
+                    break;
+                case 'FR':
+                    newX += player === 'A' ? 1 : -1;
+                    newY += 1;
+                    break;
+                case 'BL':
+                    newX -= player === 'A' ? 1 : -1;
+                    newY -= 1;
+                    break;
+                case 'BR':
+                    newX -= player === 'A' ? 1 : -1;
+                    newY += 1;
+                    break;
+                default:
+                    console.error("Invalid move command");
+                    return;
+            }
+
+            if (newX < 0 || newX >= gridSize || newY < 0 || newY >= gridSize) {
+                console.error("Invalid move: Out of bounds");
+                return;
+            }
+
+            const targetCell = gameState.players[player].characters[char];
+            if (targetCell) {
+                console.error("Invalid move: Targeting friendly character");
+                return;
+            }
+
+            let moveValid = true;
+            for (const char in gameState.players[opponent].characters) {
+                const [opponentX, opponentY] = gameState.players[opponent].characters[char];
+                if (opponentX === newX && opponentY === newY) {
+                    delete gameState.players[opponent].characters[char];
+                    moveValid = true;
+                    break;
+                }
+            }
+
+            if (moveValid) {
+                gameState.players[player].characters[char] = [newX, newY];
+            } else {
+                console.error("Invalid move: No valid move found");
+            }
+
+            if (Object.keys(gameState.players[opponent].characters).length === 0) {
+                gameState.winner = player;
+            }
+
+            gameState.turn = opponent;
+            renderGameBoard();
+        }
+
+        setupPlayers();
+        renderGameBoard();
+        handlePlayerMove('P1:R'); // Player A's P1 moves right
+        handlePlayerMove('P1:L'); // Player B's P1 moves left
+        handlePlayerMove('H1:F'); // Player A's H1 moves forward
+        handlePlayerMove('H2:FL'); // Player B's H2 moves forward-left
+    </script>
+</body>
+</html>
